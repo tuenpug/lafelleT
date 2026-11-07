@@ -153,6 +153,18 @@ input[type=text]:focus{border-color:var(--gold)}
 #level .nav{margin-top:14px}
 @media (max-width:760px){#cLevel{grid-template-columns:repeat(2,1fr)}}
 #help{pointer-events:auto}
+#tut{display:none;position:fixed;top:70px;left:50%;transform:translateX(-50%);min-width:min(460px,90vw);max-width:92vw;background:rgba(14,18,40,.9);border:3px solid var(--gold);border-radius:22px;padding:12px 26px 16px;z-index:6;pointer-events:auto;text-align:center;box-shadow:0 0 0 6px rgba(255,209,102,.18),0 12px 30px rgba(0,0,0,.45);animation:tutglow 1.6s ease-in-out infinite}
+@keyframes tutglow{0%,100%{box-shadow:0 0 0 4px rgba(255,209,102,.15),0 12px 30px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 10px rgba(255,209,102,.3),0 12px 30px rgba(0,0,0,.45)}}
+#tut.pop .tk,#tut.pop .tt{animation:tutpop .35s ease-out}@keyframes tutpop{0%{transform:scale(.8);opacity:0}100%{transform:scale(1);opacity:1}}
+.tutHead{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:800;letter-spacing:1px;color:var(--gold)}
+#bTutSkip{background:none;border:1px solid rgba(255,255,255,.3);color:#dfe6f5;border-radius:8px;font:700 12px inherit;padding:2px 9px;cursor:pointer}
+#tutTxt .tk{font-size:34px;font-weight:800;margin:4px 0 2px;line-height:1.2}
+#tutTxt .tk kbd{display:inline-block;min-width:44px;padding:2px 12px;margin:0 3px;font-size:28px;line-height:1.3;border-radius:12px;background:#fff;color:#1b1030;border-bottom:5px solid #c9b6ff;box-shadow:0 3px 0 rgba(0,0,0,.3)}
+#tutTxt .tt{font-size:26px;font-weight:800;color:#fff;margin:4px 0 10px}
+.tutBar{height:6px;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden}.tutBar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--coral));transition:width .4s}
+#tutOk{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:64px;color:#5be37d;opacity:0;pointer-events:none;text-shadow:0 4px 14px rgba(0,0,0,.5)}
+#tutOk.go{animation:tutok .6s ease-out}@keyframes tutok{0%{opacity:0;transform:scale(.4)}30%{opacity:1;transform:scale(1.15)}100%{opacity:0;transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){#tut{animation:none}}
 #flash{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center,rgba(255,209,102,0) 55%,rgba(255,209,102,.38) 85%,rgba(255,255,255,.55) 100%)}
 #flash.go{animation:flash .5s ease-out}
 @keyframes flash{0%{opacity:1}100%{opacity:0}}
@@ -174,6 +186,7 @@ input[type=text]:focus{border-color:var(--gold)}
   <h1 class="logo heroLogo">Boulder<br>Quest</h1>
   <div class="btns heroBtns">
     <button class="btn big" id="bStart">Play</button>
+    <button class="btn ghost" id="bTut">🎓 Tutorial</button>
     <button class="btn ghost" id="bHow">How to play</button>
   </div>
 </div>
@@ -256,6 +269,7 @@ input[type=text]:focus{border-color:var(--gold)}
   <div id="swingWrap"><b id="sTitle">SWING</b><div class="dbar"><span id="sFill"></span><i id="sNeed"></i></div><div id="sTxt" style="font-size:14px;color:var(--muted)"></div></div>
   <div id="holdWrap"><b id="hTitle">⚠ Hanging on one hand!</b><div class="bar"><i id="hFill"></i></div><div id="hTxt" style="font-size:14px;color:var(--muted)"></div></div>
   <div class="hud-br">
+    <button class="btn ghost helpBtn" id="bDown" title="Come down and retry (C)">⬇ Get down <kbd>C</kbd></button>
     <button class="btn ghost helpBtn" id="bHelp" title="Rules &amp; controls (H)">? Help</button>
   </div>
 </div>
@@ -270,7 +284,7 @@ input[type=text]:focus{border-color:var(--gold)}
   Put a hand on <b>TOP</b> and hold it for a second to finish. One limb per hold!<br>
   <b>Feet still on the mat?</b> Press ↓ to step back and choose another start (← → walk, ↑ step up).<br>
   <b>Hanging on one hand / off balance?</b> You can't let go or make another big move: place your other limbs first.<br>
-  <span style="color:var(--muted)">H or ? Help: show / hide this · P pause · M music · R restart attempt<br>Camera: drag the screen to look around · scroll or pinch to zoom · 0 resets</span>
+  <span style="color:var(--muted)">H or ? Help: show / hide this · P pause · M music · C get down & retry<br>Camera: drag the screen to look around · scroll or pinch to zoom · 0 resets<br><b>C</b> or ⬇ Get down: come down off the wall and try again from a new start</span>
 </div>
 
 <div id="pause" class="screen center"><div class="panel" style="width:min(420px,92vw);text-align:center">
@@ -299,6 +313,7 @@ input[type=text]:focus{border-color:var(--gold)}
 <div id="toast"></div>
 <div id="big"></div>
 <div id="flash"></div>
+<div id="tut"><div class="tutHead"><span id="tutStep">Lesson 1</span><button id="bTutSkip" title="Skip this task">Skip ▸</button></div><div id="tutTxt"></div><div class="tutBar"><i id="tutBar"></i></div><div id="tutOk">✓</div></div>
 
 <script>
 // ================= CLIMBING LOGIC (pure, no three.js) =================
@@ -337,7 +352,7 @@ const HOLD_TYPES = {
 
 const LEVELS = {
   easy: {
-    name: 'Easy', angle: 0, stepMin: 0.135, stepMax: 0.17, pump: 0.6, balanceTol: 1.5, maxShift: 0.9,
+    name: 'Easy', angle: 0, stepMin: 0.135, stepMax: 0.17, pump: 0.4, balanceTol: 1.9, maxShift: 0.95,
     types: { jug: 6, edge: 3, pinch: 1 }, footTypes: { jug: 3, edge: 3, chip: 2 },
     bigMove: false, smearOK: false, footSlip: 0.0, wind: 0
   },
@@ -392,7 +407,7 @@ function matFeet(level, u) {
 }
 // the wall's shape: [height along the wall, angle in degrees] knots; the angle blends smoothly between knots
 function makeProfile(level, rnd) {
-  if (level === 'easy') return [[0, 0], [1.9 + rnd() * 0.3, 8 + rnd() * 6]];
+  if (level === 'easy') return [[0, 0], [2.3 + rnd() * 0.3, 3 + rnd() * 4]]; // almost vertical
   if (level === 'normal') return [[0, 4], [1.7 + rnd() * 0.3, 22 + rnd() * 8]];             // a deep curve into a steep top
   if (level === 'difficult') return [[0, 6], [1.5 + rnd() * 0.3, 34 + rnd() * 8], [3.1 + rnd() * 0.3, 14 + rnd() * 10]]; // a roof, then a headwall
   // supreme: overhang, a slab ledge, then a second, even steeper roof
@@ -417,7 +432,7 @@ function holdRad(h) { return (HOLD_R[h.type] || 0.1) * (h.size || ROUTE_SC); }
 // an irregular wall: a jittered grid of points pushed out by different amounts and cut into triangles,
 // so the wall is made of many flat facets at different angles (arêtes, bulges, dihedrals), some painted
 function makeFacets(level, rnd, W, H, amp) {
-  const A = amp != null ? amp : { easy: 0.16, normal: 0.38, difficult: 0.5, supreme: 0.6 }[level];
+  const A = amp != null ? amp : { easy: 0.08, normal: 0.38, difficult: 0.5, supreme: 0.6 }[level];
   const nx = Math.round(W / 0.8), ny = 6, pts = [];
   // outline: a tall middle section, lower side wings with sloping tops, slanted outer edges
   const topAt = [];
@@ -478,7 +493,7 @@ function onWall(F, u, v, m) {
 }
 function generateRoute(level, seed) {
   const L = LEVELS[level], rnd = mulberry32(seed);
-  const W = 12, H = 5.2, topV = { easy: 3.6, normal: 4.1, difficult: 4.6, supreme: 4.7 }[level];
+  const W = 12, H = 5.2, topV = { easy: 3.3, normal: 4.1, difficult: 4.6, supreme: 4.7 }[level];
   const th = L.angle * Math.PI / 180;
   const profile = makeProfile(level, rnd);
   const facets = makeFacets(level, rnd, W, H);
@@ -579,12 +594,12 @@ function generateRoute(level, seed) {
   // one per small grid cell, every hold has its own space, all colours mixed so no single route stands out
   const decor = [];
   const FILL = {
-    easy: { jug: 4, pinch: 2, star: 2, crescent: 2, rail: 1, macro: 1, edge: 2, sloper: 1, chip: 1, donut: 2, bubble: 1, tri: 1 },
+    easy: { jug: 6, pinch: 2, star: 2, crescent: 2, rail: 2, macro: 1, edge: 1, donut: 3, bubble: 1 },
     normal: { jug: 2, pinch: 2, edge: 3, sloper: 2, crescent: 1, star: 1, rail: 1, macro: 1, crimp: 1, pocket: 1, chip: 2, donut: 1, bubble: 1, tri: 2 },
     difficult: { jug: 1, pinch: 2, edge: 2, sloper: 3, crimp: 3, pocket: 2, chip: 3, crescent: 1, rail: 1, macro: 1, tri: 2, bubble: 1 },
     supreme: { jug: 0.5, pinch: 2, edge: 2, sloper: 3, crimp: 4, pocket: 2, chip: 4, tri: 2, bubble: 1 }
   }[level];
-  const fill = { easy: 0.8, normal: 0.85, difficult: 0.85, supreme: 0.85 }[level];
+  const fill = { easy: 0.88, normal: 0.85, difficult: 0.85, supreme: 0.85 }[level];
   const CELL = 0.4, nx = Math.floor((W - 0.3) / CELL), ny = Math.floor((H - 0.4) / CELL);
   for (let iy = 0; iy < ny; iy++) for (let ix = 0; ix < nx; ix++) {
     if (rnd() > fill) continue;
@@ -859,7 +874,7 @@ function climbTick(st, dt, level, rnd) {
   if (ang > 15) fb *= 0.7 + 0.3 * st.shoe.steep;
   const footShare = feetOn.length === 2 ? fb : feetOn.length === 1 ? fb * 0.62 : 0;
   const load = handsOn.length ? (1 - footShare) / handsOn.length : 0;
-  const chalkDecay = st.gear.id === 'liquid' ? 0.009 : 0.018;
+  const chalkDecay = (st.gear.id === 'liquid' ? 0.009 : 0.018) * (level === 'easy' ? 0.6 : 1);
   for (const l of ['lh', 'rh']) {
     const s = st.limbs[l];
     if (s.state === 'on') {
@@ -1148,7 +1163,14 @@ const MOODS = {
   menu:   { bpm: 92,  chords: [[60, 64, 67, 71], [57, 60, 64, 67], [53, 57, 60, 64], [55, 59, 62, 65]], kick: false, hat: false, arp: [0, 1, 2, 3], wave: 'triangle' },
   gym:    { bpm: 116, chords: [[60, 64, 67, 72], [55, 59, 62, 67], [57, 60, 64, 69], [53, 57, 60, 65]], kick: true, hat: true, arp: [0, 2, 1, 3, 2, 1], wave: 'square' },
   forest: { bpm: 86,  chords: [[62, 66, 69, 73], [59, 62, 66, 69], [55, 59, 62, 66], [57, 61, 64, 69]], kick: false, hat: false, arp: [0, 1, 2, 3, 2, 1], wave: 'triangle' },
-  sea:    { bpm: 102, chords: [[57, 60, 64, 69], [53, 57, 60, 65], [48, 52, 55, 60], [55, 59, 62, 67]], kick: true, hat: true, arp: [3, 2, 1, 0], wave: 'sawtooth' }
+  sea:    { bpm: 102, chords: [[57, 60, 64, 69], [53, 57, 60, 65], [48, 52, 55, 60], [55, 59, 62, 67]], kick: true, hat: true, arp: [3, 2, 1, 0], wave: 'sawtooth' },
+  // the climbing theme: bright, bouncy and encouraging (I–V–vi–IV with a sing-along hook);
+  // it grows as she climbs higher, and lifts a key for the final push to the top
+  climb:  { bpm: 124, chords: [[60, 64, 67, 72], [55, 59, 62, 67], [57, 60, 64, 69], [53, 57, 60, 65]], kick: true, hat: true, clap: true, arp: [0, 2, 1, 3, 2, 1, 0, 2], wave: 'triangle',
+    lead: [72, 0, 76, 0, 79, 0, 76, 74, 72, 0, 74, 76, 74, 0, 72, 0,
+           74, 0, 79, 0, 83, 0, 81, 79, 79, 0, 81, 0, 79, 0, 74, 0,
+           76, 0, 81, 0, 84, 0, 83, 81, 79, 0, 81, 83, 84, 0, 81, 0,
+           77, 0, 81, 0, 79, 0, 77, 76, 74, 0, 76, 0, 77, 0, 79, 0] }
 };
 function setMood(m) { AU.mood = m; if (AU.ctx) { AU.nextT = AU.ctx.currentTime + 0.1; AU.step = 0; } }
 function musicTick() {
@@ -1156,12 +1178,18 @@ function musicTick() {
   const C = AU.ctx, M = MOODS[AU.mood], spb = 60 / M.bpm / 2;
   if (AU.nextT < C.currentTime) AU.nextT = C.currentTime + 0.05;
   while (AU.nextT < C.currentTime + 0.2) {
-    const s = AU.step, t = AU.nextT, ch = M.chords[Math.floor(s / 16) % 4];
+    const s = AU.step, t = AU.nextT, I = AU.intensity || 0;
+    const up = M.lead && I > 0.75 ? 2 : 0; // key change for the final push
+    const ch = M.chords[Math.floor(s / 16) % 4].map(n => n + up);
     if (s % 16 === 0) mPad(ch, t, spb * 16);
     if (s % 2 === 0 || M.bpm > 100) mPluck(midiHz(ch[M.arp[s % M.arp.length]] + 12), t, spb * 1.6, M.wave);
-    if (s % 8 === 0) mBass(midiHz(ch[0] - 24), t, spb * 6);
+    if (M.lead) { if (s % 4 === 0 || s % 4 === 3) mBass(midiHz(ch[0] - 24 + (s % 4 === 3 ? 7 : 0)), t, spb * 1.8); }
+    else if (s % 8 === 0) mBass(midiHz(ch[0] - 24), t, spb * 6);
     if (M.kick && s % 4 === 0) mKick(t);
-    if (M.hat && s % 4 === 2) mNoise(t, 0.05, 'highpass', 7000, 0.7, 0.05, AU.music);
+    if (M.hat && (s % 4 === 2 || (M.lead && I > 0.5 && s % 2 === 1))) mNoise(t, 0.05, 'highpass', 7000, 0.7, 0.05, AU.music);
+    if (M.clap && s % 8 === 4) { mNoise(t, 0.09, 'bandpass', 1500, 1.2, 0.11, AU.music); mNoise(t + 0.012, 0.07, 'bandpass', 1800, 1.4, 0.07, AU.music); }
+    // the sing-along hook joins once she is off the ground, louder and doubled higher up
+    if (M.lead && I > 0.12) { const n = M.lead[s % M.lead.length]; if (n) { mLead(midiHz(n + up), t, spb * 1.7, 0.035 + I * 0.03); if (I > 0.6) mLead(midiHz(n + up + 12), t, spb * 1.2, 0.012); } }
     AU.nextT += spb; AU.step++;
   }
 }
@@ -1175,6 +1203,16 @@ function mPad(ch, t, dur) {
     const o = C.createOscillator(); o.type = 'sawtooth'; o.frequency.value = midiHz(n); o.detune.value = det;
     o.connect(f); o.start(t); o.stop(t + dur + 0.05);
   }
+}
+function mLead(fr, t, d, vol) {
+  // a bright, friendly lead with a little vibrato
+  const C = AU.ctx, o = C.createOscillator(), o2 = C.createOscillator(), g = C.createGain(), fl = C.createBiquadFilter(), lfo = C.createOscillator(), lg = C.createGain();
+  o.type = 'square'; o2.type = 'triangle'; o.frequency.value = fr; o2.frequency.value = fr; o2.detune.value = 6;
+  lfo.frequency.value = 5.5; lg.gain.value = fr * 0.006; lfo.connect(lg); lg.connect(o.frequency); lg.connect(o2.frequency);
+  fl.type = 'lowpass'; fl.frequency.value = 2600;
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.02); g.gain.setValueAtTime(vol, t + d * 0.6); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  o.connect(fl); o2.connect(fl); fl.connect(g); g.connect(AU.music);
+  for (const x of [o, o2, lfo]) { x.start(t); x.stop(t + d + 0.03); }
 }
 function mPluck(fr, t, d, w) {
   const C = AU.ctx, o = C.createOscillator(), g = C.createGain(), fl = C.createBiquadFilter();
@@ -2715,16 +2753,19 @@ document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
   SFX.click(); const go = b.dataset.go; show(go); if (go === 'title') renderTitle();
   if (go === 'custom') renderCustom(); if (go === 'shoes') renderShoes(); if (go === 'gear') renderGear(); if (go === 'level') renderLevels();
 });
-$('bStart').onclick = () => { audioInit(); setMood('menu'); SFX.click(); G.daily = null; renderCustom(); show('custom'); };
+$('bStart').onclick = () => { audioInit(); setMood('menu'); SFX.click(); G.daily = null; G.tutorial = null; renderCustom(); show('custom'); };
 $('bHelp').onclick = () => toggleHelp();
+$('bDown').onclick = (e) => { e.stopPropagation(); getDown(); };
+$('bTutSkip').onclick = (e) => { e.stopPropagation(); if (G.tutorial) tutNext(); };
+$('bTut').onclick = () => { audioInit(); SFX.click(); startTutorial(); };
 $('bHow').onclick = () => { audioInit(); SFX.click(); renderTitle(); show('howto'); };
-$('bDaily').onclick = () => { audioInit(); SFX.click(); G.daily = dailyInfo(); startGame(false); };
+$('bDaily').onclick = () => { audioInit(); SFX.click(); G.tutorial = null; G.daily = dailyInfo(); startGame(false); };
 $('bGo').onclick = () => { SFX.click(); G.daily = null; startGame(false); };
 $('bResume').onclick = () => resumeGame();
 $('bRestartA').onclick = () => { resumeGame(); if (G.state === 'climb') startFall('Restarting…', true); };
 $('bQuit').onclick = () => goMenu('title');
-$('bSame').onclick = () => startGame(true);
-$('bNew').onclick = () => { G.daily = null; startGame(false); };
+$('bSame').onclick = () => { if (G.tutorial) startTutorial(); else startGame(true); };
+$('bNew').onclick = () => { G.daily = null; G.tutorial = null; $('tut').style.display = 'none'; startGame(false); };
 $('bGearAgain').onclick = () => { goMenu('custom'); renderCustom(); };
 $('bMenu').onclick = () => goMenu('title');
 function toggleHelp(force) { const h = $('help'); const on = force !== undefined ? force : h.style.display !== 'block'; h.style.display = on ? 'block' : 'none'; }
@@ -3130,7 +3171,7 @@ function startGame(same) {
   show(null); $('hud').style.display = 'block'; if (camera.clearViewOffset) camera.clearViewOffset();
   $('hScene').textContent = `${G.daily ? '🗓 Daily · ' : ''}${G.scene.name} · ${G.route.grade}`;
   $('hWho').textContent = `${look.name} · ${LEVELS[G.level].name}`;
-  setMood(ENV.music); startAmbience(G.scene.env);
+  setMood('climb'); AU.intensity = 0; startAmbience(G.scene.env);
   G.state = 'preview'; G.stateT = 0;
   
 }
@@ -3181,7 +3222,7 @@ function startReach(P) {
   G.lookAt = W3(st.hip.x, st.hip.y + 0.55, 0);
 }
 function goMenu(screen) {
-  $('hud').style.display = 'none'; toggleHelp(false);
+  $('hud').style.display = 'none'; toggleHelp(false); $('tut').style.display = 'none'; G.tutorial = null;
   setupMenu(); show(screen || 'title'); renderTitle();
 }
 function pauseGame() { G.prevState = G.state; G.state = 'paused'; show('pause'); }
@@ -3230,6 +3271,7 @@ function openSel(l) {
   else if (s.state === 'on' && G.state === 'climb') toast(`Nothing higher for this ${IS_HAND[l] ? 'hand' : 'foot'}`, 'info');
 }
 function stepSel(dir) {
+  if (G.tutorial) G.tutArrow = true;
   const sel = G.sel; if (!sel) return;
   const l = sel.limb, st = G.st;
   const from = sel.pick || limbPos(st, l);
@@ -3284,7 +3326,7 @@ function selRings() {
 // ---- swing power: tapping ← → back and forth rocks the body and builds power for a far lunge ----
 // three swings (tap ↑↓ or ←→ back and forth) make a higher hand hold reachable for a few seconds
 // after 3 swings a hand can fly for a hold 2-3 times as far as a normal reach
-const DYNO_EXT = { easy: 0.42, normal: 0.5, difficult: 0.55, supreme: 0.55 };
+const DYNO_EXT = { easy: 0.5, normal: 0.5, difficult: 0.55, supreme: 0.55 };
 function swingTap(axis, sign) {
   const sw = G.swing, st = G.st;
   if (G.oneHand) return; // no swinging for another big move until she is balanced again
@@ -3338,7 +3380,7 @@ function updateAnims(dt) {
       const st = G.st, others = LIMBS.filter(m => m !== l && (st.limbs[m].state === 'on' || st.limbs[m].state === 'smear')).length;
       G.stretchL = null;
       if (others >= 2) st.oneHand = false;
-      else { const T = { easy: 4, normal: 3.2, difficult: 2.5, supreme: 2.1 }[G.level]; G.oneHand = { l, t: T, max: T, stretch: true }; toast('Off balance! Put a foot back on — quick!', 'bad'); G.shake = 0.03; }
+      else { const T = { easy: 5.5, normal: 3.2, difficult: 2.5, supreme: 2.1 }[G.level]; G.oneHand = { l, t: T, max: T, stretch: true }; toast('Off balance! Put a foot back on — quick!', 'bad'); G.shake = 0.03; }
     }
   }
 }
@@ -3465,7 +3507,7 @@ function updateFly(dt) {
   st.limbs[f.l] = { hold: h.id, u: h.u, v: h.v, state: 'on' };
   for (const m of LIMBS) if (m !== f.l) { st.limbs[m].state = 'off'; st.limbs[m].hold = null; }
   st.offset = [0, 0]; st.balance = 0;
-  const T = { easy: 4.5, normal: 3.5, difficult: 2.8, supreme: 2.4 }[G.level];
+  const T = { easy: 6, normal: 3.5, difficult: 2.8, supreme: 2.4 }[G.level];
   G.oneHand = { l: f.l, t: T, max: T }; st.oneHand = true;
   st.pump[f.l] = Math.min(0.9, st.pump[f.l] + 0.15);
   SFX.grab(); SFX.catch && SFX.catch(); G.shake = 0.07 + f.dist * 0.06;
@@ -3582,6 +3624,13 @@ function updateFall(dt) {
   }
   poseRig(RIG, P, dt);
 }
+// C (or the button): come down off the wall and choose a new start
+function getDown() {
+  if (G.state !== 'climb') return;
+  const st = G.st;
+  if (st.limbs.lf.state === 'mat' && st.limbs.rf.state === 'mat') { stepOffWall(); return; }
+  startFall('Coming down to try again…', true);
+}
 // still standing on the mat: let go of the start holds and step back to choose another start
 function stepOffWall() {
   G.sel = null; G.anim = {}; G.oneHand = null;
@@ -3617,6 +3666,7 @@ function topOut() {
   for (let i = 0; i < 3; i++) setTimeout(() => CONF.spawn(V().copy(p).addScaledVector(B.N, 0.4), 120, cols, 0.4, { x: B.N.x * 1.5, y: 2.6, z: B.N.z * 1.5, r: 3.2 }, 0.05, 3.2), i * 250);
 }
 function endGame(reason) {
+  if (G.tutorial) { tutFinish(); return; }
   G.state = 'result'; showRings([], 0);
   const topV = G.route.holds[G.route.topId].v;
   let score, stars, title, msg;
@@ -3687,9 +3737,9 @@ addEventListener('keydown', e => {
   if (inGame && (e.code === 'KeyP' || e.code === 'Escape')) { pauseGame(); return; }
   if (G.state === 'paused' && (e.code === 'KeyP' || e.code === 'Escape')) { resumeGame(); return; }
   if (inGame && e.code === 'KeyH') { toggleHelp(); return; }
-  if (inGame) { const cm = { KeyZ: 'l', KeyX: 'r', KeyC: 'u', KeyV: 'd', Minus: 'out', Equal: 'in', Digit0: '0' }[e.code]; if (cm) { camNudge(cm); return; } }
+  if (inGame) { const cm = { KeyZ: 'l', KeyX: 'r', Minus: 'out', Equal: 'in', Digit0: '0' }[e.code]; if (cm) { camNudge(cm); return; } }
   if (G.state !== 'climb') return;
-  if (e.code === 'KeyR') { startFall('Restarting…', true); return; }
+  if (e.code === 'KeyR' || e.code === 'KeyC') { getDown(); return; }
   if (LIMB_KEYS[e.code]) { G.active = LIMB_KEYS[e.code]; openSel(G.active); return; }
   if (e.code === 'Space') { const l = currentLimb(); if (l && IS_HAND[l]) { G.sel = null; startShake(l); } else toast('Hold Q or E with Space to chalk up that hand', 'info'); return; }
   if (DIRS[e.code]) {
@@ -3722,7 +3772,7 @@ const LIMB_EL = { lh: 'lQ', rh: 'lW', lf: 'lA', rf: 'lS' };
 function hudUpdate() {
   const st = G.st; if (!st) return;
   const tm = Math.max(0, Math.ceil(G.time));
-  $('hTime').textContent = `${Math.floor(tm / 60)}:${String(tm % 60).padStart(2, '0')}`;
+  $('hTime').textContent = G.tutorial ? 'Lesson' : `${Math.floor(tm / 60)}:${String(tm % 60).padStart(2, '0')}`;
   $('hTime').classList.toggle('low', G.time < 20 && G.state === 'climb');
   $('hAtt').textContent = G.attempts;
   if (G.route && G.route.draws) { const nc = (G.clips || []).length; $('hClip').textContent = `🔗 ${nc} clipped · next clip in ${5 - ((G.moves || 0) % 5)} moves`; }
@@ -3849,6 +3899,9 @@ function gameUpdate(dt) {
       st.offset[0] += dx * 0.9 * dt; st.offset[1] += dy * 0.9 * dt;
       if (!dx && !dy) { st.offset[0] *= Math.pow(0.6, dt); st.offset[1] *= Math.pow(0.8, dt); }
     }
+    if (G.tutorial) { G.time = 999; st.pump.lh = Math.min(st.pump.lh, 0.55); st.pump.rh = Math.min(st.pump.rh, 0.55); G.swingCD = 0; }
+    // the music grows with her height on the wall
+    AU.intensity = clamp((st.hip.y - 0.9) / Math.max(1, G.route.holds[G.route.topId].v - 1.3), 0, 1);
     if (G.swingCD > 0) { G.swingCD = Math.max(0, G.swingCD - dt); if (!G.swingCD) { toast('Swing recharged!', 'good'); SFX.zone(); } }
     swingUpdate(dt);
     if (G.fly) { updateFly(dt); if (G.state !== 'climb') return; }
@@ -3925,7 +3978,7 @@ function frame(now) {
   if (G.state !== 'paused') {
     G.t += dt; G.stateT += dt;
     if (G.state === 'menu') menuUpdate(G.t, dt);
-    else if (G.st) { gameUpdate(dt); updateFx(real); hudUpdate(); updateRope(); }
+    else if (G.st) { gameUpdate(dt); updateFx(real); hudUpdate(); updateRope(); if (G.tutorial) tutUpdate(); }
     if (ENV && ENV.update) ENV.update(G.t, dt);
     if (PUFF) PUFF.update(dt);
     if (CONF) CONF.update(dt);
@@ -3935,6 +3988,65 @@ function frame(now) {
 setupMenu(); show('title'); renderTitle();
 $('loading').remove();
 requestAnimationFrame(frame);
+
+// ======================= TUTORIAL LESSON =======================
+// a guided first climb on an easy wall: one small task at a time, each ticks off when she does it
+const K = (...ks) => ks.map(k => `<kbd>${k}</kbd>`).join('');
+const TUT = [
+  { k: K('←', '→') + ' ' + K('↑'), t: 'Walk, then grab the green holds', done: () => G.state === 'reach' || G.state === 'countdown' || G.state === 'climb' },
+  { k: K('A'), t: 'Left foot up', done: () => G.st.limbs.lf.state === 'on' },
+  { k: K('D'), t: 'Right foot up', done: () => G.st.limbs.rf.state === 'on' },
+  { k: K('Q') + ' or ' + K('E'), t: 'Hand up', start: () => { G.tutMark = [G.st.limbs.lh.hold, G.st.limbs.rh.hold]; }, done: () => (G.st.limbs.lh.state === 'on' && G.st.limbs.lh.hold !== G.tutMark[0]) || (G.st.limbs.rh.state === 'on' && G.st.limbs.rh.hold !== G.tutMark[1]) },
+  { k: K('Q') + ' + ' + K('↑'), t: 'Hold a key, arrows pick a hold', start: () => { G.tutArrow = false; G.tutMark = LIMBS.map(l => G.st.limbs[l].hold); }, done: () => G.tutArrow && LIMBS.some((l, i) => G.st.limbs[l].state === 'on' && G.st.limbs[l].hold !== G.tutMark[i]) },
+  { k: '🦶 ➜ ✋', t: 'Feet first, then hands', start: () => { G.tutY = G.st.hip.y; }, done: () => G.st.hip.y > G.tutY + 0.3 },
+  { k: K('Q') + ' + ' + K('Space'), t: 'Chalk up — energy back', done: () => G.st.limbs.lh.state === 'shake' || G.st.limbs.rh.state === 'shake' },
+  { k: K('←', '→', '←', '→'), t: 'Swing ×3', done: () => G.swing.ready > 0 },
+  { k: K('E'), t: 'Jump to the orange hold!', done: () => !!G.fly, skipIf: () => G.swing.ready <= 0 && !G.fly, back: 7 },
+  { k: K('A') + ' ' + K('D'), t: 'Feet back on — fast!', done: () => !G.fly && !G.oneHand && G.state === 'climb', fail: 'Missed — swing again!' },
+  { k: K('C'), t: 'Get down anytime', timed: 3.5 },
+  { k: '🏁', t: 'Reach the TOP!', done: () => G.topped }
+];
+function tutShow() {
+  const el = $('tut'); if (!el) return;
+  const k = G.tutorial.step, T = TUT[k];
+  el.style.display = 'block';
+  $('tutStep').textContent = `${k + 1} / ${TUT.length}`;
+  $('tutTxt').innerHTML = `<div class="tk">${T.k}</div><div class="tt">${T.t}</div>`;
+  $('tutBar').style.width = (k / TUT.length * 100) + '%';
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+}
+function tutNext() {
+  const tu = G.tutorial; tu.step++; tu.t = 0;
+  if (tu.step >= TUT.length) return;
+  if (TUT[tu.step].start) TUT[tu.step].start();
+  SFX.zone();
+  const ok = $('tutOk'); ok.classList.remove('go'); void ok.offsetWidth; ok.classList.add('go');
+  setTimeout(tutShow, 350);
+}
+function tutUpdate() {
+  const tu = G.tutorial; if (!tu || tu.step >= TUT.length || !G.st) return;
+  tu.t = (tu.t || 0) + 1 / 60;
+  const T = TUT[tu.step];
+  if (T.timed) { if (tu.t > T.timed) tutNext(); return; }
+  if (T.skipIf && T.skipIf() && tu.t > 1) { tu.step = T.back - 1; tutNext(); return; }
+  if (T.fail && G.state === 'falling') { toast(T.fail, 'info'); tu.step = 6; tutNext(); return; }
+  if (T.done()) tutNext();
+}
+function tutFinish() {
+  G.state = 'result'; showRings([], 0); $('tut').style.display = 'none';
+  $('rTitle').textContent = 'Lesson complete! 🎓';
+  $('rStars').innerHTML = '<span class="on">★</span><span class="on">★</span><span class="on">★</span>';
+  $('rGrid').innerHTML = '';
+  $('rMsg').textContent = 'You know every move: feet first, choose holds, chalk up, swing and jump, clip the rope, reach the TOP.';
+  $('rExtra').innerHTML = '<div>Now try a real climb on Easy — and earn stars to unlock outfits!</div>';
+  SFX.top && SFX.top();
+  show('result');
+}
+function startTutorial() {
+  G.tutorial = { step: 0, t: 0 }; G.daily = null; G.level = 'easy';
+  startGame(false);
+  tutShow();
+}
 
 </script>
 
